@@ -1,0 +1,8 @@
+[env]
+_.file = ".env"
+MC_CONFIG_DIR = ".data/mc"
+
+[tools]
+mc = "2025-05-21T01-59-54Z"
+rust = "1.87.0"
+"ubi:go-task/task" = "3.44.0"

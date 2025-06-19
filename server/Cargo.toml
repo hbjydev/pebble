@@ -1,0 +1,13 @@
+[package]
+name = "pebble-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+atrium-api = { version = "0.25.4", default-features = false }
+aws-config = "1.8.0"
+aws-sdk-s3 = "1.93.0"
+axum = { version = "0.8.4", features = ["macros"] }
+clap = { workspace = true, features = ["derive", "env"] }
+tokio = "1.45.1"
+url = "2.5.4"

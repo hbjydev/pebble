@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["cli", "server"]
+
+[workspace.dependencies]
+clap = "4.5.40"

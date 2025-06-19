@@ -1,0 +1,14 @@
+---
+version: '3'
+
+tasks:
+  init-s3:
+    cmds:
+      - mc alias set pebble-dev http://localhost:9000 {{ env "PEBBLE_S3_ACCESS_KEY_ID" }} {{ env "PEBBLE_S3_SECRET_ACCESS_KEY" }}
+      - mc rb --force pebble-dev/{{ env "PEBBLE_S3_BUCKET_NAME" }}
+      - mc mb pebble-dev/{{ env "PEBBLE_S3_BUCKET_NAME" }}
+
+  build:
+    cmds:
+      - cargo build --release
+    silent: true
