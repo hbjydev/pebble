@@ -1,0 +1,23 @@
+use axum::{http::StatusCode, response::IntoResponse};
+
+pub type Result<T = ()> = anyhow::Result<T, AppError>;
+
+pub struct AppError(anyhow::Error);
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("error: {}", self.0),
+        ).into_response()
+    }
+}
+
+impl<E> From<E> for AppError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
+}

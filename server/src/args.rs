@@ -11,25 +11,6 @@ fn is_valid_did(s: &str) -> Result<Did, String> {
     }
 }
 
-fn relay_csv(s: &str) -> Result<Vec<Url>, String> {
-    let mut errors = vec![];
-    let out = s.split(",")
-        .map(|val| {
-            match Url::parse(val) {
-                Ok(url) => Ok(url),
-                Err(err) => return Err(format!("failed to parse relay url: {}", err)),
-            }
-        })
-        .filter_map(|r| r.map_err(|e| errors.push(e)).ok())
-        .collect();
-
-    if errors.len() > 0 {
-        Err(errors.first().unwrap().clone())
-    } else {
-        Ok(out)
-    }
-}
-
 #[derive(Args, Debug)]
 pub struct PebbleServerArgs {
     #[arg(long, short, env = "PEBBLE_BIND_ADDR")]
@@ -47,7 +28,6 @@ pub struct PebbleServerArgs {
     pub contact_email: String,
 
     #[arg(long, default_value = "https://bsky.network", short, env = "PEBBLE_RELAYS")]
-    // #[arg(value_parser = relay_csv)]
     pub relays: Vec<Url>,
 
     #[arg(long, env = "PEBBLE_DB_NAME")]
