@@ -5,6 +5,7 @@ mod handlers;
 mod utils;
 
 mod config;
+use anyhow::Result;
 use config::*;
 use handlers::make_router;
 
@@ -14,7 +15,7 @@ pub struct PebbleServer {
 }
 
 impl PebbleServer {
-    pub fn new(args: args::PebbleServerArgs) -> Self {
+    pub async fn new(args: args::PebbleServerArgs) -> Result<Self> {
         let config = Config {
             server: ServerConfig {
                 bind_addr: args.bind_addr,
@@ -35,12 +36,19 @@ impl PebbleServer {
                 port: args.db_port,
             },
 
+            redis: RedisConfig::new(
+                args.redis_host,
+                args.redis_port,
+                args.redis_db_cache,
+                args.redis_db_session,
+            ).await?,
+
             s3: S3Config {
                 bucket_name: args.s3_bucket_name,
             },
         };
 
-        Self { config }
+        Ok(Self { config })
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {

@@ -1,9 +1,32 @@
 ---
 volumes:
+  redisdata:
   dbdata:
   s3data:
 
 services:
+  redis:
+    env_file: .env
+    image: redis:8
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - ${PEBBLE_REDIS_PORT:-6379}:6379
+    volumes:
+      - redisdata:/data
+
+  redisinsight:
+    env_file: .env
+    image: redis/redisinsight
+    environment:
+      RI_REDIS_HOST0: redis
+      RI_REDIS_PORT0: '6379'
+      RI_REDIS_ALIAS0: cache
+      RI_REDIS_HOST1: redis
+      RI_REDIS_PORT1: '6379'
+      RI_REDIS_ALIAS1: session
+    ports:
+      - 5540:5540
+
   db:
     env_file: .env
     image: postgres:17

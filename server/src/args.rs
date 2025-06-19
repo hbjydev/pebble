@@ -30,6 +30,15 @@ pub struct PebbleServerArgs {
     #[arg(long, default_value = "https://bsky.network", short, env = "PEBBLE_RELAYS")]
     pub relays: Vec<Url>,
 
+    #[arg(long, env = "PEBBLE_REDIS_HOST")]
+    pub redis_host: String,
+    #[arg(long, default_value_t = 6379, env = "PEBBLE_REDIS_PORT")]
+    pub redis_port: i32,
+    #[arg(long, default_value_t = 0, env = "PEBBLE_REDIS_DB_CACHE")]
+    pub redis_db_cache: i16,
+    #[arg(long, default_value_t = 1, env = "PEBBLE_REDIS_DB_SESSION")]
+    pub redis_db_session: i16,
+
     #[arg(long, env = "PEBBLE_DB_NAME")]
     pub db_name: String,
     #[arg(long, env = "PEBBLE_DB_USER")]
