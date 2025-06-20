@@ -2,7 +2,8 @@ use axum::{extract::FromRef, routing::get, Router};
 
 use crate::config::Config;
 
-mod handle_root;
+mod root;
+mod health;
 mod well_known {
     pub mod did;
 }
@@ -26,7 +27,8 @@ impl FromRef<AppState> for Config {
 
 pub fn make_router(config: Config) -> Router {
     Router::new()
-        .route("/", get(handle_root::handler))
+        .route("/", get(root::handler))
+        .route("/xrpc/_health", get(health::handler))
         .route("/.well-known/did.json", get(well_known::did::handler))
 
         // public endpoints
