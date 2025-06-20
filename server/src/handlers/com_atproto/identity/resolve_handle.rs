@@ -1,11 +1,9 @@
-use anyhow::anyhow;
 use atrium_api::types::string::{Did, Handle};
 use axum::{extract::{Query, State}, http::StatusCode, response::IntoResponse, Json};
 use fred::prelude::KeysInterface;
-use hickory_resolver::{config::ResolverConfig, name_server::TokioConnectionProvider, Resolver};
 use serde::{Deserialize, Serialize};
 
-use crate::{config::Config, error::Result, utils::{DnsResolver, HandleResolver}};
+use crate::{config::Config, error::{AppError, Result}, utils::resolve_handle};
 
 #[derive(Deserialize)]
 pub struct ResolveHandleQuery {
@@ -23,17 +21,16 @@ pub async fn handler(
     State(cfg): State<Config>,
 ) -> Result<impl IntoResponse> {
     if query.handle.clone() == "" {
-        return Err(anyhow!("Handle must be supplied in the request.").into());
+        return Err(AppError::InvalidHandle);
     }
 
     let handle = Handle::new(query.handle.clone())
-        .map_err(|_| anyhow!("invalid handle"))?;
+        .map_err(|_| AppError::InvalidHandle)?;
 
     let cache_key = format!("hr:{}", handle.to_string());
 
     let client = cfg.redis.cache();
     if let Some(did_str) = client.get::<Option<String>, String>(cache_key.clone()).await? {
-        println!("cache hit!");
         if let Ok(did) = Did::new(did_str) {
             return Ok(
                 (
@@ -46,8 +43,7 @@ pub async fn handler(
         };
     }
 
-    let resolver = DnsResolver::new();
-    if let Some(did) = resolver.resolve_handle(handle).await {
+    if let Some(did) = resolve_handle(handle).await {
         client.set::<(), String, String>(
             cache_key,
             did.to_string(),
@@ -66,5 +62,5 @@ pub async fn handler(
         );
     }
 
-    Err(anyhow::anyhow!("failed to find did for handle").into())
+    Err(AppError::InvalidHandle)
 }

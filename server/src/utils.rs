@@ -1,5 +1,7 @@
-use atrium_api::types::string::{Did, Handle};
+use atrium_api::{did_doc::DidDocument, types::string::{Did, Handle}};
 use hickory_resolver::{config::ResolverConfig, name_server::{GenericConnector, TokioConnectionProvider}, proto::{rr::rdata::TXT, runtime::TokioRuntimeProvider}, Resolver};
+
+use crate::error::{AppError, Result};
 
 pub trait HandleResolver {
     async fn resolve_handle(&self, handle: Handle) -> Option<Did>;
@@ -48,4 +50,60 @@ impl HandleResolver for DnsResolver {
 
         None
     }
+}
+
+pub struct WebResolver(reqwest::Client);
+
+impl WebResolver {
+    pub fn new() -> Result<WebResolver> {
+        let client = reqwest::ClientBuilder::new()
+            .build()
+            .map_err(|e| AppError::InternalError(e.into()))?;
+
+        Ok(WebResolver(client))
+    }
+}
+
+impl HandleResolver for WebResolver {
+    async fn resolve_handle(&self, handle: Handle) -> Option<Did> {
+        let url = format!("https://{}/.well-known/atproto-did", handle.to_string());
+        let res = match self.0.get(url).send().await {
+            Ok(r) => r,
+            Err(e) => {
+                tracing::warn!(?e, "failed web check");
+                println!("failed web check: {}", e);
+                return None;
+            },
+        };
+
+        let did_string = match res.text().await {
+            Ok(r) => r,
+            Err(e) => {
+                println!("failed did str parsing: {:?}", e);
+                tracing::warn!(?e, "failed did str parsing");
+                return None;
+            },
+        };
+
+        match Did::new(did_string) {
+            Ok(did) => Some(did),
+            _ => None,
+        }
+    }
+}
+
+pub async fn resolve_handle(handle: Handle) -> Option<Did> {
+    let dns_resolver = DnsResolver::new();
+    let web_resolver = match WebResolver::new() {
+        Ok(r) => r,
+        _ => return None,
+    };
+
+    if let Some(did) = dns_resolver.resolve_handle(handle.clone()).await {
+        return Some(did);
+    } else if let Some(did) = web_resolver.resolve_handle(handle).await {
+        return Some(did);
+    }
+
+    None
 }
